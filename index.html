@@ -1,761 +1,545 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>ファミリーバンク タスクチェック</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#f5f5f7;
-      --card:#ffffff;
-      --accent:#111827;
-      --muted:#6b7280;
-      --border:#e5e7eb;
-    }
-    *{box-sizing:border-box;}
-    body{
-      margin:0;
-      padding:12px;
-      font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","YuGothic",sans-serif;
-      background:var(--bg);
-      color:#111827;
-    }
-    h1{
-      font-size:20px;
-      margin:0 0 4px;
-    }
-    h2{
-      font-size:16px;
-      margin:0 0 8px;
-    }
-    .card{
-      background:var(--card);
-      border-radius:12px;
-      padding:12px 14px;
-      margin-bottom:12px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.04);
-    }
-    /* 上部サマリーをスクロール時も固定 */
-    .sticky-summary{
-      position:sticky;
-      top:0;
-      z-index:20;
-    }
-    .header-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-items:center;
-      justify-content:space-between;
-    }
-    .subtext{
-      font-size:12px;
-      color:var(--muted);
-    }
-    select,button,input[type="number"]{
-      font-size:14px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid #d1d5db;
-      background:#fff;
-    }
-    button{
-      cursor:pointer;
-    }
-    button.primary{
-      background:var(--accent);
-      color:#fff;
-      border:none;
-    }
-    .summary{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:8px;
-    }
-    .summary-item{
-      flex:1 1 120px;
-      background:#f3f4f6;
-      border-radius:10px;
-      padding:8px 10px;
-      font-size:12px;
-    }
-    .summary-item .value{
-      display:block;
-      font-size:18px;
-      font-weight:bold;
-      margin-top:2px;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
-    }
-    thead{
-      background:#e5e7eb;
-    }
-    th,td{
-      padding:6px 4px;
-      border-bottom:1px solid var(--border);
-      vertical-align:top;
-    }
-    th{text-align:left;font-weight:600;}
-    td.reward{text-align:right;white-space:nowrap;}
-    td.control{text-align:center;width:80px;}
-    .category-tag{
-      display:inline-block;
-      padding:2px 6px;
-      border-radius:999px;
-      font-size:11px;
-      background:#eef2ff;
-      color:#4f46e5;
-      margin-bottom:2px;
-    }
-    .desc{
-      font-size:11px;
-      color:var(--muted);
-    }
-    .footer-note{
-      font-size:11px;
-      color:var(--muted);
-      margin-top:4px;
-    }
-    .btn-row{
-      margin-top:8px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .tabs{
-      display:flex;
-      gap:4px;
-      margin-bottom:8px;
-    }
-    .tab-btn{
-      flex:1 1 0;
-      text-align:center;
-      font-size:12px;
-      padding:6px 4px;
-      border-radius:999px;
-      border:1px solid #d1d5db;
-      background:#fff;
-    }
-    .tab-btn.active{
-      background:var(--accent);
-      color:#fff;
-      border-color:var(--accent);
-    }
-    .tab-content{display:none;}
-    .tab-content.active{display:block;}
-    .history-group{
-      margin-top:8px;
-      padding-top:6px;
-      border-top:1px dashed var(--border);
-    }
-    .history-title{
-      font-size:13px;
-      font-weight:600;
-      margin-bottom:4px;
-    }
-    .history-row{
-      font-size:12px;
-      display:flex;
-      justify-content:space-between;
-      margin:2px 0;
-    }
-    .empty-text{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:4px;
-    }
-    .counter-wrap{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:4px;
-    }
-    .counter-wrap button{
-      padding:4px 8px;
-      border-radius:999px;
-    }
-    .counter-wrap input{
-      width:48px;
-      text-align:center;
-      padding:4px 6px;
-      border-radius:8px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Family Bank</title>
+
+<style>
+:root{
+  --bg:#f5f5f7;
+  --card:#ffffff;
+  --accent:#111827;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  padding:12px;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","YuGothic",sans-serif;
+  background:var(--bg);
+  color:#111827;
+  font-size:16px;
+}
+h1{margin:0;font-size:22px;}
+h2{margin:0 0 8px;font-size:18px;font-weight:600;}
+
+.card{
+  background:var(--card);
+  border-radius:14px;
+  padding:14px 16px;
+  margin-bottom:14px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* sticky summary */
+.sticky-summary{
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+
+.header-row{
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.subtext{
+  font-size:13px;
+  color:var(--muted);
+}
+
+select,button,input[type="number"]{
+  font-size:15px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  background:#fff;
+}
+button.primary{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+}
+
+.summary{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+.summary-item{
+  flex:1 1 140px;
+  background:#f3f4f6;
+  border-radius:12px;
+  padding:10px 12px;
+}
+.summary-item .value{
+  display:block;
+  font-size:20px;
+  font-weight:700;
+  margin-top:4px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:15px;
+}
+th,td{
+  padding:10px 6px;
+  border-bottom:1px solid var(--border);
+}
+th{
+  text-align:left;
+  font-weight:600;
+}
+td.reward{
+  text-align:right;
+  font-size:18px;
+  font-weight:600;
+}
+td.control{
+  width:90px;
+  text-align:center;
+}
+
+.task-name{
+  font-size:16px;
+  font-weight:600;
+}
+.desc{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+.counter-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.counter-wrap button{
+  padding:4px 10px;
+  border-radius:999px;
+}
+
+/* tabs */
+.tabs{
+  display:flex;
+  gap:6px;
+  margin-bottom:12px;
+}
+.tab-btn{
+  flex:1 1 0;
+  text-align:center;
+  padding:8px 0;
+  font-size:14px;
+  border-radius:999px;
+  border:1px solid #d1d5db;
+  background:#fff;
+}
+.tab-btn.active{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.history-group{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px dashed var(--border);
+}
+.history-title{
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.history-row{
+  font-size:15px;
+  display:flex;
+  justify-content:space-between;
+  margin:4px 0;
+}
+.empty-text{
+  font-size:14px;
+  color:var(--muted);
+  margin-top:8px;
+}
+</style>
 </head>
+
 <body>
-  <!-- タブ -->
+
+<div class="card">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="main">今日のタスク</button>
+    <button class="tab-btn" data-tab="month">月別のきろく</button>
+    <button class="tab-btn" data-tab="week">週別のきろく</button>
+  </div>
+</div>
+
+<div id="tab-main" class="tab-content active">
+  <div class="card sticky-summary">
+    <div class="header-row">
+      <div>
+        <h1>Family Bank</h1>
+        <div class="subtext">
+          タスクを入力すると、日・週・月の金額が自動集計されます。
+        </div>
+      </div>
+
+      <div>
+        <label for="childSelect" style="font-size:14px;">子ども：</label>
+        <select id="childSelect">
+          <option value="Cocoro">Cocoro</option>
+          <option value="Sota">Sota</option>
+          <option value="Eight">Eight</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="summary-item">
+        今日の日付
+        <span id="todayLabel" class="value"></span>
+      </div>
+      <div class="summary-item">
+        今日の合計
+        <span id="todayTotal" class="value">¥0</span>
+      </div>
+      <div class="summary-item">
+        今週の合計
+        <span id="weekTotal" class="value">¥0</span>
+      </div>
+      <div class="summary-item">
+        今月の合計
+        <span id="monthTotal" class="value">¥0</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button id="resetTodayBtn">今日の入力をリセット</button>
+      <button id="resetChildAllBtn">この子の全データを消去</button>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="main">今日のタスク</button>
-      <button class="tab-btn" data-tab="month">月別のきろく</button>
-      <button class="tab-btn" data-tab="week">週別のきろく</button>
-    </div>
+    <h2>タスク一覧</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>タスク名</th>
+          <th class="reward">報酬</th>
+          <th class="control">入力</th>
+        </tr>
+      </thead>
+      <tbody id="taskTableBody"></tbody>
+    </table>
   </div>
+</div>
+<script>
+// =============================
+// タスク定義（最新版すべて反映済み）
+// =============================
+const TASKS = [
+  // ------- 読書 -------
+  {
+    name: "読書・感想（Easy）",
+    reward: 300,
+    type: "check",
+    desc: "1冊読んで、しっかりと感想を書く"
+  },
+  {
+    name: "読書・感想（Normal）",
+    reward: 1000,
+    type: "check",
+    desc: "1冊を丁寧に読み、内容を理解して自分の考えを書く"
+  },
+  {
+    name: "読書・感想（Hard）",
+    reward: 1500,
+    type: "check",
+    desc: "1冊を深く読み込み、気づきや分析を踏まえて感想を書く"
+  },
 
-  <!-- メイン -->
-  <div id="tab-main" class="tab-content active">
-    <div class="card sticky-summary">
-      <div class="header-row">
-        <div>
-          <h1>ファミリーバンク タスクチェック</h1>
-          <div class="subtext">
-            子どもごとにタスクを記録すると、日・週・月の金額が自動で集計・保存されます。
-          </div>
-        </div>
-        <div>
-          <label for="childSelect" style="font-size:12px;">子ども：</label>
-          <select id="childSelect">
-            <option value="Cocoro">Cocoro</option>
-            <option value="Sota">Sota</option>
-            <option value="Eight">Eight</option>
-          </select>
-        </div>
-      </div>
+  // ------- 学習系 -------
+  {
+    name: "調べ学習（1テーマ）",
+    reward: 500,
+    type: "check",
+    desc: "調べたことをまとめる"
+  },
+  {
+    name: "学習発表（図鑑学習→名称変更）",
+    reward: 300,
+    type: "check",
+    desc: "なんでも良いので調べて家族の前で発表する"
+  },
 
-      <div class="summary">
-        <div class="summary-item">
-          今日の日付
-          <span id="todayLabel" class="value"></span>
-        </div>
-        <div class="summary-item">
-          今日の合計
-          <span id="todayTotal" class="value">¥0</span>
-        </div>
-        <div class="summary-item">
-          今週の合計
-          <span id="weekTotal" class="value">¥0</span>
-        </div>
-        <div class="summary-item">
-          今月の合計
-          <span id="monthTotal" class="value">¥0</span>
-        </div>
-      </div>
+  // ------- 生活・家事 -------
+  {
+    name: "お風呂掃除（回数式）",
+    reward: 50,
+    type: "count",
+    desc: "自分の担当範囲を全部掃除する"
+  },
+  {
+    name: "朝起き（毎日連続チャレンジ）",
+    reward: 300,
+    type: "check",
+    desc: "起こされずに自分で起きる"
+  },
+  {
+    name: "部屋の片付け（週2回以上）",
+    reward: 100,
+    type: "check",
+    desc: "週に2回達成"
+  },
+  {
+    name: "玄関掃除（週2回以上）",
+    reward: 200,
+    type: "check",
+    desc: "靴の整頓と掃き掃除"
+  },
+  {
+    name: "皿拭き・片付け（回数式）",
+    reward: 50,
+    type: "count",
+    desc: "道具の後片付け・拭き上げ・しまうまでを1セットとする"
+  },
+  {
+    name: "上履き掃除",
+    reward: 100,
+    type: "check",
+    desc: "上履きを洗って乾かす"
+  },
 
-      <div class="btn-row">
-        <button id="resetTodayBtn">今日の入力をリセット</button>
-        <button id="resetChildAllBtn">この子の全データを消去</button>
-      </div>
-      <div class="footer-note">
-        ※ データはこの端末のブラウザ（localStorage）に保存されます。日付ごとに記録されるため、日付が変わると自然と「その日の入力」はリセットされます。
-      </div>
-    </div>
+  // ------- 創造 -------
+  { name: "企画ポスター", reward: 300, type: "check" },
+  { name: "手紙クリエイティブ", reward: 100, type: "check" },
+  { name: "動画作成（インスタ用）", reward: 500, type: "check" },
 
-    <div class="card">
-      <h2>タスク一覧</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>カテゴリ</th>
-            <th>タスク名 / 内容</th>
-            <th class="reward">報酬</th>
-            <th class="control">入力</th>
-          </tr>
-        </thead>
-        <tbody id="taskTableBody"></tbody>
-      </table>
-    </div>
-  </div>
+  // ------- 社会性 -------
+  {
+    name: "新しいタスク案（2案なら1000円、1案なら500円）",
+    reward: 1000,
+    type: "check"
+  },
+  { name: "公共マナー実践", reward: 150, type: "check" },
+  { name: "困っている人の手助け", reward: 150, type: "check" },
 
-  <!-- 月別履歴 -->
-  <div id="tab-month" class="tab-content">
-    <div class="card">
-      <h2>月別のきろく</h2>
-      <div class="subtext">
-        1日〜月末までの合計金額を、子どもごと・月ごとに確認できます。
-      </div>
-      <div id="monthHistory"></div>
-    </div>
-  </div>
+  // ------- 情緒・マインド -------
+  {
+    name: "感謝ノート（毎日）",
+    reward: 100,
+    type: "check",
+    desc: "小さなことでも感謝を見つけて日付と一緒に書く"
+  },
+  {
+    name: "自己肯定ワーク",
+    reward: 100,
+    type: "check",
+    desc: "自分の良いところを書き出す（週3回以上）"
+  },
+  { name: "怒らないデー", reward: 200, type: "check" },
+  {
+    name: "サッカー・HC・バスケノート（1週達成）",
+    reward: 100,
+    type: "check"
+  },
 
-  <!-- 週別履歴 -->
-  <div id="tab-week" class="tab-content">
-    <div class="card">
-      <h2>週別のきろく</h2>
-      <div class="subtext">
-        月曜日〜日曜日を1週間として、子どもごとの合計金額を記録しています。
-      </div>
-      <div id="weekHistory"></div>
-    </div>
-  </div>
+  // ------- 経営・数字 -------
+  {
+    name: "支出記録（月で）",
+    reward: 100,
+    type: "check"
+  }
+];
 
-  <script>
-    const CHILDREN = ["Cocoro", "Sota", "Eight"];
-    const STORAGE_KEY = "familyTaskData_v4"; // 回数対応版としてキーを更新
+// =============================
+// ローカルストレージ管理
+// =============================
+function loadData() {
+  return JSON.parse(localStorage.getItem("familyBank") || "{}");
+}
+function saveData(data) {
+  localStorage.setItem("familyBank", JSON.stringify(data));
+}
 
-    // kind: "check" or "counter"
-    const tasks = [
-      // 知的・学習
-      { id:"t1",  category:"知的・学習", kind:"check",
-        name:"読書・感想（Easy）",   desc:"1冊読んで、短く感想を書く - Easy", reward:300 },
-      { id:"t2",  category:"知的・学習", kind:"check",
-        name:"読書・感想（Normal）", desc:"1冊しっかり読み、感想を書く - Normal", reward:1000 },
-      { id:"t3",  category:"知的・学習", kind:"check",
-        name:"読書・感想（Hard）",   desc:"厚めの本などをじっくり読み、感想を書く - Hard", reward:1500 },
-      { id:"t4",  category:"知的・学習", kind:"check",
-        name:"調べ学習1テーマ",      desc:"疑問を1つ選び、調べてまとめる", reward:500 },
-      { id:"t5",  category:"知的・学習", kind:"check",
-        name:"ドリル・自学（1冊完了）", desc:"ドリル1冊を最後までやり切る", reward:300 },
-      { id:"t6",  category:"知的・学習", kind:"check",
-        name:"ドリル・自学（連続達成）", desc:"自学ノート1Pを7日中6日以上達成", reward:500 },
-      { id:"t7",  category:"知的・学習", kind:"check",
-        name:"図鑑学習",             desc:"生き物1つを選び特徴と豆知識を書く", reward:300 },
-      { id:"t8",  category:"知的・学習", kind:"check",
-        name:"自然観察1テーマ",      desc:"植物・虫などを観察してまとめる", reward:150 },
+// =============================
+// 子ども選択
+// =============================
+const childSelect = document.getElementById("childSelect");
 
-      // 生活・家事
-      { id:"t9",  category:"生活・家事", kind:"counter",
-        name:"お風呂掃除",           desc:"自分の範囲全てやって、お風呂全体を丁寧に掃除する（1回100円）", reward:100 },
-      { id:"t10", category:"生活・家事", kind:"check",
-        name:"朝起き（連続チャレンジ）", desc:"起こされずに自分で起きる（連続チャレンジ用）", reward:300 },
-      { id:"t11", category:"生活・家事", kind:"check",
-        name:"部屋の片付け（その日）", desc:"自室を集中して片付ける（自発的に）", reward:100 },
-      { id:"t12", category:"生活・家事", kind:"check",
-        name:"部屋の片付け（7日キープ）", desc:"綺麗な状態を7日間キープする", reward:300 },
-      { id:"t13", category:"生活・家事", kind:"check",
-        name:"玄関掃除",             desc:"週に2回以上、掃き掃除＋靴を整頓する", reward:200 },
-      { id:"t27", category:"生活・家事", kind:"counter",
-        name:"皿洗い・皿拭き・片付け", desc:"皿洗い〜皿拭き〜片付けまで1セットで100円（回数分×100円）", reward:100 },
+// =============================
+// 日付 / 週 / 月 の計算
+// =============================
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+}
+function getWeekKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = d.getMonth()+1;
+  const w = Math.ceil(d.getDate()/7);
+  return `${y}-${m}-week${w}`;
+}
+function getMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
 
-      // 創造・発想
-      { id:"t14", category:"創造・発想", kind:"check",
-        name:"企画ポスター",         desc:"行事やイベントを企画しポスターにする", reward:300 },
-      { id:"t15", category:"創造・発想", kind:"check",
-        name:"手紙クリエイティブ",   desc:"誰か1人に感謝の手紙を書く", reward:100 },
-      { id:"t16", category:"創造・発想", kind:"check",
-        name:"動画作成",             desc:"インスタ投稿用の動画を作成する", reward:500 },
+// =============================
+// UI構築
+// =============================
+function renderTasks() {
+  const body = document.getElementById("taskTableBody");
+  body.innerHTML = "";
 
-      // 社会性
-      { id:"t17", category:"社会性", kind:"check",
-        name:"新しいタスク案・採用", desc:"新タスクを提案し採用されたとき", reward:1000 },
-      { id:"t18", category:"社会性", kind:"check",
-        name:"公共マナー実践",       desc:"席を譲るなど配慮行動を実践", reward:150 },
-      { id:"t19", category:"社会性", kind:"check",
-        name:"困っている人の手助け", desc:"困っている人をサポートし報告する", reward:150 },
+  TASKS.forEach(task => {
+    const tr = document.createElement("tr");
 
-      // 情緒・マインド
-      { id:"t20", category:"情緒・マインド", kind:"check",
-        name:"感謝ノート",      desc:"その日『ありがとう』を3つ書く", reward:100 },
-      { id:"t21", category:"情緒・マインド", kind:"check",
-        name:"自己肯定ワーク",  desc:"今日できた良いことを3つ書く", reward:100 },
-      { id:"t22", category:"情緒・マインド", kind:"check",
-        name:"怒らないデー",    desc:"1日感情コントロールに成功する", reward:200 },
-      { id:"t23", category:"情緒・マインド", kind:"check",
-        name:"サッカー・HC・バスケノート", desc:"練習回数分をその日に記録", reward:50 },
+    // 名前
+    const nameTd = document.createElement("td");
+    nameTd.innerHTML = `<div class="task-name">${task.name}</div>
+      ${task.desc ? `<div class="desc">${task.desc}</div>` : ""}`;
+    tr.appendChild(nameTd);
 
-      // 経営・数字
-      { id:"t24", category:"経営・数字", kind:"check",
-        name:"支出記録",             desc:"その週のお小遣いの使い道を記録", reward:100 },
-      { id:"t25", category:"経営・数字", kind:"check",
-        name:"価格比較",             desc:"同じ商品を3店舗で比較してまとめる", reward:200 },
-      { id:"t26", category:"経営・数字", kind:"check",
-        name:"小さなビジネス案",     desc:"商品／サービス案を1つ考えて提出", reward:300 }
-    ];
+    // 金額
+    const rewardTd = document.createElement("td");
+    rewardTd.className = "reward";
+    rewardTd.textContent = `¥${task.reward}`;
+    tr.appendChild(rewardTd);
 
-    function loadData(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(!raw) return { days:{} };
-        const parsed = JSON.parse(raw);
-        if(!parsed.days) parsed.days = {};
-        return parsed;
-      }catch(e){
-        return { days:{} };
-      }
-    }
-    function saveData(data){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
+    // 入力（チェック or 回数）
+    const controlTd = document.createElement("td");
+    controlTd.className = "control";
 
-    function formatDate(date){
-      const y = date.getFullYear();
-      const m = ("0"+(date.getMonth()+1)).slice(-2);
-      const d = ("0"+date.getDate()).slice(-2);
-      return `${y}-${m}-${d}`;
-    }
-    function parseDate(str){
-      const [y,m,d] = str.split("-").map(Number);
-      return new Date(y,m-1,d);
-    }
-    // 月曜始まりの週の「その週の月曜日」
-    function mondayStart(date){
-      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const day = d.getDay(); // 0:日〜6:土
-      const offset = (day + 6) % 7; // 月曜=0
-      d.setDate(d.getDate() - offset);
-      return d;
-    }
-    function sameWeekMonday(dateA, dateB){
-      const a = mondayStart(dateA);
-      const b = mondayStart(dateB);
-      return a.getFullYear()===b.getFullYear() &&
-             a.getMonth()===b.getMonth() &&
-             a.getDate()===b.getDate();
-    }
-    function monthKey(date){
-      const y = date.getFullYear();
-      const m = ("0"+(date.getMonth()+1)).slice(-2);
-      return `${y}-${m}`;
-    }
-    function yen(num){
-      return "¥"+(num||0).toLocaleString();
+    if (task.type === "check") {
+      const btn = document.createElement("button");
+      btn.textContent = "✓";
+      btn.onclick = () => addRecord(task, 1);
+      controlTd.appendChild(btn);
+    } else {
+      const wrap = document.createElement("div");
+      wrap.className = "counter-wrap";
+
+      const minus = document.createElement("button");
+      minus.textContent = "-";
+      minus.onclick = () => addRecord(task, -1);
+
+      const plus = document.createElement("button");
+      plus.textContent = "+";
+      plus.onclick = () => addRecord(task, 1);
+
+      wrap.appendChild(minus);
+      wrap.appendChild(plus);
+      controlTd.appendChild(wrap);
     }
 
-    const childSelect = document.getElementById("childSelect");
-    const todayLabel = document.getElementById("todayLabel");
-    const todayTotalEl = document.getElementById("todayTotal");
-    const weekTotalEl = document.getElementById("weekTotal");
-    const monthTotalEl = document.getElementById("monthTotal");
-    const resetTodayBtn = document.getElementById("resetTodayBtn");
-    const resetChildAllBtn = document.getElementById("resetChildAllBtn");
-    const taskTableBody = document.getElementById("taskTableBody");
-    const monthHistoryEl = document.getElementById("monthHistory");
-    const weekHistoryEl = document.getElementById("weekHistory");
+    tr.appendChild(controlTd);
+    body.appendChild(tr);
+  });
+}
 
-    const today = new Date();
-    const todayStr = formatDate(today);
-    todayLabel.textContent = todayStr;
+// =============================
+// 記録追加
+// =============================
+function addRecord(task, count) {
+  const child = childSelect.value;
+  const data = loadData();
 
-    // タブ切り替え
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const tabContents = {
-      main: document.getElementById("tab-main"),
-      month: document.getElementById("tab-month"),
-      week: document.getElementById("tab-week")
-    };
-    tabButtons.forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        tabButtons.forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-        const tab = btn.dataset.tab;
-        Object.keys(tabContents).forEach(k=>{
-          tabContents[k].classList.toggle("active", k===tab);
-        });
-        if(tab==="month") renderMonthHistory();
-        if(tab==="week") renderWeekHistory();
-      });
+  if (!data[child]) data[child] = {};
+  if (!data[child][getTodayKey()]) data[child][getTodayKey()] = [];
+
+  if (count > 0) {
+    for (let i = 0; i < count; i++) {
+      data[child][getTodayKey()].push(task.reward);
+    }
+  } else {
+    data[child][getTodayKey()].pop();
+  }
+
+  saveData(data);
+  updateSummary();
+}
+
+// =============================
+// サマリー更新
+// =============================
+function updateSummary() {
+  const child = childSelect.value;
+  const data = loadData();
+
+  const todayKey = getTodayKey();
+  const weekKey = getWeekKey();
+  const monthKey = getMonthKey();
+
+  let todayTotal = 0;
+  let weekTotal = 0;
+  let monthTotal = 0;
+
+  if (data[child]) {
+    Object.keys(data[child]).forEach(dateKey => {
+      const sum = data[child][dateKey].reduce((a,b)=>a+b,0);
+
+      if (dateKey === todayKey) todayTotal += sum;
+      if (dateKey.startsWith(monthKey)) monthTotal += sum;
+      if (dateKey.includes(weekKey.replace(/.*week/, "week"))) weekTotal += sum;
     });
+  }
 
-    // 入力部品のマップ
-    const inputMap = {}; // taskId -> { kind, el }
+  document.getElementById("todayTotal").textContent = `¥${todayTotal}`;
+  document.getElementById("weekTotal").textContent = `¥${weekTotal}`;
+  document.getElementById("monthTotal").textContent = `¥${monthTotal}`;
+  document.getElementById("todayLabel").textContent = todayKey;
+}
 
-    function renderTasks(){
-      taskTableBody.innerHTML = "";
-      tasks.forEach(task=>{
-        const tr = document.createElement("tr");
+// =============================
+// リセット
+// =============================
+document.getElementById("resetTodayBtn").onclick = () => {
+  const child = childSelect.value;
+  const data = loadData();
+  if (data[child]) {
+    data[child][getTodayKey()] = [];
+    saveData(data);
+    updateSummary();
+  }
+};
 
-        const tdCat = document.createElement("td");
-        const catTag = document.createElement("span");
-        catTag.className = "category-tag";
-        catTag.textContent = task.category;
-        tdCat.appendChild(catTag);
+document.getElementById("resetChildAllBtn").onclick = () => {
+  const child = childSelect.value;
+  const data = loadData();
+  data[child] = {};
+  saveData(data);
+  updateSummary();
+};
 
-        const tdName = document.createElement("td");
-        const nameDiv = document.createElement("div");
-        nameDiv.textContent = task.name;
-        const descDiv = document.createElement("div");
-        descDiv.className = "desc";
-        descDiv.textContent = task.desc;
-        tdName.appendChild(nameDiv);
-        tdName.appendChild(descDiv);
+// =============================
+// タブ切り替え（main / week / month）
+// =============================
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+  };
+});
 
-        const tdReward = document.createElement("td");
-        tdReward.className = "reward";
-        if(task.kind === "counter"){
-          tdReward.textContent = `${yen(task.reward)} × 回数`;
-        }else{
-          tdReward.textContent = yen(task.reward);
-        }
+// =============================
+renderTasks();
+updateSummary();
+// =============================
+</script>
 
-        const tdCtrl = document.createElement("td");
-        tdCtrl.className = "control";
-
-        if(task.kind === "check"){
-          const cb = document.createElement("input");
-          cb.type = "checkbox";
-          cb.dataset.taskId = task.id;
-          tdCtrl.appendChild(cb);
-          inputMap[task.id] = { kind:"check", el:cb };
-          cb.addEventListener("change", handleInputChange);
-        }else{
-          const wrap = document.createElement("div");
-          wrap.className = "counter-wrap";
-
-          const minusBtn = document.createElement("button");
-          minusBtn.type = "button";
-          minusBtn.textContent = "−";
-
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "0";
-          input.step = "1";
-          input.value = "0";
-          input.dataset.taskId = task.id;
-
-          const plusBtn = document.createElement("button");
-          plusBtn.type = "button";
-          plusBtn.textContent = "+";
-
-          wrap.appendChild(minusBtn);
-          wrap.appendChild(input);
-          wrap.appendChild(plusBtn);
-          tdCtrl.appendChild(wrap);
-
-          inputMap[task.id] = { kind:"counter", el:input };
-
-          input.addEventListener("change", handleInputChange);
-          plusBtn.addEventListener("click", ()=>{
-            let v = parseInt(input.value,10);
-            if(isNaN(v)) v = 0;
-            input.value = String(v+1);
-            handleInputChange();
-          });
-          minusBtn.addEventListener("click", ()=>{
-            let v = parseInt(input.value,10);
-            if(isNaN(v)) v = 0;
-            input.value = String(Math.max(0, v-1));
-            handleInputChange();
-          });
-        }
-
-        tr.appendChild(tdCat);
-        tr.appendChild(tdName);
-        tr.appendChild(tdReward);
-        tr.appendChild(tdCtrl);
-
-        taskTableBody.appendChild(tr);
-      });
-    }
-    renderTasks();
-
-    function calcDayTotalFor(child, dateStr){
-      const data = loadData();
-      const childDays = (data.days && data.days[child]) || {};
-      const dayData = childDays[dateStr] || {};
-      let total = 0;
-      tasks.forEach(task=>{
-        const v = dayData[task.id];
-        if(task.kind === "counter"){
-          const n = typeof v === "number" ? v : 0;
-          if(n>0) total += task.reward * n;
-        }else{
-          if(v) total += task.reward;
-        }
-      });
-      return total;
-    }
-
-    function updateTotals(){
-      const data = loadData();
-      const child = childSelect.value;
-      const childDays = (data.days && data.days[child]) || {};
-
-      const todayTotal = calcDayTotalFor(child, todayStr);
-      todayTotalEl.textContent = yen(todayTotal);
-
-      let weekTotal = 0;
-      Object.keys(childDays).forEach(dateStr=>{
-        const d = parseDate(dateStr);
-        if(sameWeekMonday(d, today)){
-          weekTotal += calcDayTotalFor(child, dateStr);
-        }
-      });
-      weekTotalEl.textContent = yen(weekTotal);
-
-      let monthTotal = 0;
-      const thisMonthKey = monthKey(today);
-      Object.keys(childDays).forEach(dateStr=>{
-        const d = parseDate(dateStr);
-        if(monthKey(d) === thisMonthKey){
-          monthTotal += calcDayTotalFor(child, dateStr);
-        }
-      });
-      monthTotalEl.textContent = yen(monthTotal);
-    }
-
-    function updateInputsFromData(){
-      const data = loadData();
-      const child = childSelect.value;
-      const childDays = (data.days && data.days[child]) || {};
-      const dayData = childDays[todayStr] || {};
-
-      tasks.forEach(task=>{
-        const entry = inputMap[task.id];
-        if(!entry) return;
-        const v = dayData[task.id];
-        if(entry.kind === "check"){
-          entry.el.checked = !!v;
-        }else{
-          const n = (typeof v === "number" && v>0) ? v : 0;
-          entry.el.value = String(n);
-        }
-      });
-
-      updateTotals();
-    }
-
-    function handleInputChange(){
-      const data = loadData();
-      const child = childSelect.value;
-      if(!data.days[child]) data.days[child] = {};
-      if(!data.days[child][todayStr]) data.days[child][todayStr] = {};
-      const dayData = data.days[child][todayStr];
-
-      tasks.forEach(task=>{
-        const entry = inputMap[task.id];
-        if(!entry) return;
-        if(entry.kind === "check"){
-          dayData[task.id] = !!entry.el.checked;
-        }else{
-          let v = parseInt(entry.el.value,10);
-          if(isNaN(v) || v<0) v = 0;
-          dayData[task.id] = v;
-        }
-      });
-
-      saveData(data);
-      updateTotals();
-    }
-
-    function renderMonthHistory(){
-      const data = loadData();
-      const days = data.days || {};
-      const monthMap = {}; // { monthKey: { child: total } }
-
-      CHILDREN.forEach(child=>{
-        const childDays = days[child] || {};
-        Object.keys(childDays).forEach(dateStr=>{
-          const d = parseDate(dateStr);
-          const mKey = monthKey(d);
-          if(!monthMap[mKey]) monthMap[mKey] = {};
-          if(!monthMap[mKey][child]) monthMap[mKey][child] = 0;
-          monthMap[mKey][child] += calcDayTotalFor(child, dateStr);
-        });
-      });
-
-      const monthKeys = Object.keys(monthMap).sort().reverse();
-      monthHistoryEl.innerHTML = "";
-      if(monthKeys.length === 0){
-        const p = document.createElement("div");
-        p.className = "empty-text";
-        p.textContent = "まだ記録がありません。タスクを記録すると自動で集計されます。";
-        monthHistoryEl.appendChild(p);
-        return;
-      }
-
-      monthKeys.forEach(mKey=>{
-        const group = document.createElement("div");
-        group.className = "history-group";
-        const title = document.createElement("div");
-        title.className = "history-title";
-        const [y,m] = mKey.split("-");
-        title.textContent = `${y}年${Number(m)}月`;
-        group.appendChild(title);
-
-        let monthTotalAll = 0;
-        CHILDREN.forEach(child=>{
-          const amt = monthMap[mKey][child] || 0;
-          monthTotalAll += amt;
-          const row = document.createElement("div");
-          row.className = "history-row";
-          row.innerHTML = `<span>${child}</span><span>${yen(amt)}</span>`;
-          group.appendChild(row);
-        });
-
-        const totalRow = document.createElement("div");
-        totalRow.className = "history-row";
-        totalRow.innerHTML = `<span>合計</span><span>${yen(monthTotalAll)}</span>`;
-        group.appendChild(totalRow);
-
-        monthHistoryEl.appendChild(group);
-      });
-    }
-
-    function renderWeekHistory(){
-      const data = loadData();
-      const days = data.days || {};
-      const weekMap = {}; // { weekKey(mondayStr): { child: total } }
-
-      CHILDREN.forEach(child=>{
-        const childDays = days[child] || {};
-        Object.keys(childDays).forEach(dateStr=>{
-          const d = parseDate(dateStr);
-          const mon = mondayStart(d);
-          const wKey = formatDate(mon);
-          if(!weekMap[wKey]) weekMap[wKey] = {};
-          if(!weekMap[wKey][child]) weekMap[wKey][child] = 0;
-          weekMap[wKey][child] += calcDayTotalFor(child, dateStr);
-        });
-      });
-
-      const weekKeys = Object.keys(weekMap).sort().reverse();
-      weekHistoryEl.innerHTML = "";
-      if(weekKeys.length === 0){
-        const p = document.createElement("div");
-        p.className = "empty-text";
-        p.textContent = "まだ週別の記録がありません。タスクを記録すると自動で集計されます。";
-        weekHistoryEl.appendChild(p);
-        return;
-      }
-
-      weekKeys.forEach(wKey=>{
-        const mon = parseDate(wKey);
-        const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+6);
-        const group = document.createElement("div");
-        group.className = "history-group";
-        const title = document.createElement("div");
-        title.className = "history-title";
-        title.textContent = `${formatDate(mon)} 〜 ${formatDate(sun)}`;
-        group.appendChild(title);
-
-        let weekTotalAll = 0;
-        CHILDREN.forEach(child=>{
-          const amt = weekMap[wKey][child] || 0;
-          weekTotalAll += amt;
-          const row = document.createElement("div");
-          row.className = "history-row";
-          row.innerHTML = `<span>${child}</span><span>${yen(amt)}</span>`;
-          group.appendChild(row);
-        });
-
-        const totalRow = document.createElement("div");
-        totalRow.className = "history-row";
-        totalRow.innerHTML = `<span>合計</span><span>${yen(weekTotalAll)}</span>`;
-        group.appendChild(totalRow);
-
-        weekHistoryEl.appendChild(group);
-      });
-    }
-
-    childSelect.addEventListener("change", ()=>{
-      updateInputsFromData();
-    });
-
-    resetTodayBtn.addEventListener("click", ()=>{
-      const data = loadData();
-      const child = childSelect.value;
-      if(!data.days[child]) data.days[child] = {};
-      data.days[child][todayStr] = {};
-      saveData(data);
-      updateInputsFromData();
-    });
-
-    resetChildAllBtn.addEventListener("click", ()=>{
-      const child = childSelect.value;
-      if(!confirm(`${child} の全期間の記録を削除しますか？`)) return;
-      const data = loadData();
-      if(data.days[child]){
-        delete data.days[child];
-        saveData(data);
-      }
-      updateInputsFromData();
-    });
-
-    // 初期表示
-    updateInputsFromData();
-  </script>
 </body>
 </html>
