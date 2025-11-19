@@ -35,6 +35,12 @@
       margin-bottom:12px;
       box-shadow:0 4px 10px rgba(0,0,0,0.04);
     }
+    /* 上部サマリーをスクロール時も固定 */
+    .sticky-summary{
+      position:sticky;
+      top:0;
+      z-index:20;
+    }
     .header-row{
       display:flex;
       flex-wrap:wrap;
@@ -46,7 +52,7 @@
       font-size:12px;
       color:var(--muted);
     }
-    select,button{
+    select,button,input[type="number"]{
       font-size:14px;
       padding:6px 10px;
       border-radius:999px;
@@ -95,7 +101,7 @@
     }
     th{text-align:left;font-weight:600;}
     td.reward{text-align:right;white-space:nowrap;}
-    td.check{text-align:center;width:40px;}
+    td.control{text-align:center;width:80px;}
     .category-tag{
       display:inline-block;
       padding:2px 6px;
@@ -157,24 +163,31 @@
       justify-content:space-between;
       margin:2px 0;
     }
-    .tag{
-      display:inline-block;
-      font-size:11px;
-      padding:2px 6px;
-      border-radius:999px;
-      background:#e5e7eb;
-      color:#374151;
-      margin-left:4px;
-    }
     .empty-text{
       font-size:12px;
       color:var(--muted);
       margin-top:4px;
     }
+    .counter-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+    }
+    .counter-wrap button{
+      padding:4px 8px;
+      border-radius:999px;
+    }
+    .counter-wrap input{
+      width:48px;
+      text-align:center;
+      padding:4px 6px;
+      border-radius:8px;
+    }
   </style>
 </head>
 <body>
-  <!-- タブ（今日 / 月別履歴 / 週別履歴） -->
+  <!-- タブ -->
   <div class="card">
     <div class="tabs">
       <button class="tab-btn active" data-tab="main">今日のタスク</button>
@@ -183,14 +196,14 @@
     </div>
   </div>
 
-  <!-- メイン（今日のタスク） -->
+  <!-- メイン -->
   <div id="tab-main" class="tab-content active">
-    <div class="card">
+    <div class="card sticky-summary">
       <div class="header-row">
         <div>
           <h1>ファミリーバンク タスクチェック</h1>
           <div class="subtext">
-            子どもごとにタスクをチェックすると、日・週・月の金額が自動で記録されます。
+            子どもごとにタスクを記録すると、日・週・月の金額が自動で集計・保存されます。
           </div>
         </div>
         <div>
@@ -223,11 +236,11 @@
       </div>
 
       <div class="btn-row">
-        <button id="resetTodayBtn">今日のチェックをリセット</button>
+        <button id="resetTodayBtn">今日の入力をリセット</button>
         <button id="resetChildAllBtn">この子の全データを消去</button>
       </div>
       <div class="footer-note">
-        ※ データはこの端末のブラウザ（localStorage）に保存されます。
+        ※ データはこの端末のブラウザ（localStorage）に保存されます。日付ごとに記録されるため、日付が変わると自然と「その日の入力」はリセットされます。
       </div>
     </div>
 
@@ -239,7 +252,7 @@
             <th>カテゴリ</th>
             <th>タスク名 / 内容</th>
             <th class="reward">報酬</th>
-            <th class="check">完了</th>
+            <th class="control">入力</th>
           </tr>
         </thead>
         <tbody id="taskTableBody"></tbody>
@@ -270,46 +283,78 @@
   </div>
 
   <script>
-    // ===== 基本設定 =====
     const CHILDREN = ["Cocoro", "Sota", "Eight"];
-    const STORAGE_KEY = "familyTaskData_v3"; // バージョン変えたのでキーも更新
+    const STORAGE_KEY = "familyTaskData_v4"; // 回数対応版としてキーを更新
 
+    // kind: "check" or "counter"
     const tasks = [
       // 知的・学習
-      { id:"t1",  category:"知的・学習", name:"読書・感想（Easy）",   desc:"1冊読んで感想を書く - Easy", reward:300 },
-      { id:"t2",  category:"知的・学習", name:"読書・感想（Normal）", desc:"1冊読んで感想を書く - Normal", reward:500 },
-      { id:"t3",  category:"知的・学習", name:"読書・感想（Genius）", desc:"1冊読んで感想を書く - Genius（重本）", reward:1000 },
-      { id:"t4",  category:"知的・学習", name:"調べ学習1テーマ",      desc:"疑問を1つ選び、調べてまとめる", reward:500 },
-      { id:"t5",  category:"知的・学習", name:"ドリル・自学（1冊完了）", desc:"ドリル1冊を最後までやり切る", reward:300 },
-      { id:"t6",  category:"知的・学習", name:"ドリル・自学（連続達成）", desc:"自学ノート1Pを7日中6日以上達成", reward:500 },
-      { id:"t7",  category:"知的・学習", name:"図鑑学習",             desc:"生き物1つを選び特徴と豆知識を書く", reward:300 },
-      { id:"t8",  category:"知的・学習", name:"自然観察1テーマ",      desc:"植物・虫などを観察してまとめる", reward:150 },
+      { id:"t1",  category:"知的・学習", kind:"check",
+        name:"読書・感想（Easy）",   desc:"1冊読んで、短く感想を書く - Easy", reward:300 },
+      { id:"t2",  category:"知的・学習", kind:"check",
+        name:"読書・感想（Normal）", desc:"1冊しっかり読み、感想を書く - Normal", reward:1000 },
+      { id:"t3",  category:"知的・学習", kind:"check",
+        name:"読書・感想（Hard）",   desc:"厚めの本などをじっくり読み、感想を書く - Hard", reward:1500 },
+      { id:"t4",  category:"知的・学習", kind:"check",
+        name:"調べ学習1テーマ",      desc:"疑問を1つ選び、調べてまとめる", reward:500 },
+      { id:"t5",  category:"知的・学習", kind:"check",
+        name:"ドリル・自学（1冊完了）", desc:"ドリル1冊を最後までやり切る", reward:300 },
+      { id:"t6",  category:"知的・学習", kind:"check",
+        name:"ドリル・自学（連続達成）", desc:"自学ノート1Pを7日中6日以上達成", reward:500 },
+      { id:"t7",  category:"知的・学習", kind:"check",
+        name:"図鑑学習",             desc:"生き物1つを選び特徴と豆知識を書く", reward:300 },
+      { id:"t8",  category:"知的・学習", kind:"check",
+        name:"自然観察1テーマ",      desc:"植物・虫などを観察してまとめる", reward:150 },
+
       // 生活・家事
-      { id:"t9",  category:"生活・家事", name:"お風呂掃除",           desc:"浴槽・床を丁寧に掃除する", reward:100 },
-      { id:"t10", category:"生活・家事", name:"朝起き",               desc:"起こされずに自分で起きる（連続チャレンジ）", reward:300 },
-      { id:"t11", category:"生活・家事", name:"部屋の片付け（その日）", desc:"自室を集中して片付ける（自発的に）", reward:100 },
-      { id:"t12", category:"生活・家事", name:"部屋の片付け（7日キープ）", desc:"綺麗な状態を7日間キープする", reward:300 },
-      { id:"t13", category:"生活・家事", name:"玄関掃除",             desc:"掃き掃除＋靴を整頓する", reward:200 },
+      { id:"t9",  category:"生活・家事", kind:"counter",
+        name:"お風呂掃除",           desc:"自分の範囲全てやって、お風呂全体を丁寧に掃除する（1回100円）", reward:100 },
+      { id:"t10", category:"生活・家事", kind:"check",
+        name:"朝起き（連続チャレンジ）", desc:"起こされずに自分で起きる（連続チャレンジ用）", reward:300 },
+      { id:"t11", category:"生活・家事", kind:"check",
+        name:"部屋の片付け（その日）", desc:"自室を集中して片付ける（自発的に）", reward:100 },
+      { id:"t12", category:"生活・家事", kind:"check",
+        name:"部屋の片付け（7日キープ）", desc:"綺麗な状態を7日間キープする", reward:300 },
+      { id:"t13", category:"生活・家事", kind:"check",
+        name:"玄関掃除",             desc:"週に2回以上、掃き掃除＋靴を整頓する", reward:200 },
+      { id:"t27", category:"生活・家事", kind:"counter",
+        name:"皿洗い・皿拭き・片付け", desc:"皿洗い〜皿拭き〜片付けまで1セットで100円（回数分×100円）", reward:100 },
+
       // 創造・発想
-      { id:"t14", category:"創造・発想", name:"企画ポスター",         desc:"行事やイベントを企画しポスターにする", reward:300 },
-      { id:"t15", category:"創造・発想", name:"手紙クリエイティブ",   desc:"誰か1人に感謝の手紙を書く", reward:100 },
-      { id:"t16", category:"創造・発想", name:"動画作成",             desc:"インスタ投稿用の動画を作成する", reward:500 },
+      { id:"t14", category:"創造・発想", kind:"check",
+        name:"企画ポスター",         desc:"行事やイベントを企画しポスターにする", reward:300 },
+      { id:"t15", category:"創造・発想", kind:"check",
+        name:"手紙クリエイティブ",   desc:"誰か1人に感謝の手紙を書く", reward:100 },
+      { id:"t16", category:"創造・発想", kind:"check",
+        name:"動画作成",             desc:"インスタ投稿用の動画を作成する", reward:500 },
+
       // 社会性
-      { id:"t17", category:"社会性",     name:"新しいタスク案・採用", desc:"新タスクを提案し採用されたとき", reward:1000 },
-      { id:"t18", category:"社会性",     name:"公共マナー実践",       desc:"席を譲るなど配慮行動を実践", reward:150 },
-      { id:"t19", category:"社会性",     name:"困っている人の手助け", desc:"困っている人をサポートし報告する", reward:150 },
+      { id:"t17", category:"社会性", kind:"check",
+        name:"新しいタスク案・採用", desc:"新タスクを提案し採用されたとき", reward:1000 },
+      { id:"t18", category:"社会性", kind:"check",
+        name:"公共マナー実践",       desc:"席を譲るなど配慮行動を実践", reward:150 },
+      { id:"t19", category:"社会性", kind:"check",
+        name:"困っている人の手助け", desc:"困っている人をサポートし報告する", reward:150 },
+
       // 情緒・マインド
-      { id:"t20", category:"情緒・マインド", name:"感謝ノート",      desc:"その日『ありがとう』を3つ書く", reward:100 },
-      { id:"t21", category:"情緒・マインド", name:"自己肯定ワーク",  desc:"今日できた良いことを3つ書く", reward:100 },
-      { id:"t22", category:"情緒・マインド", name:"怒らないデー",    desc:"1日感情コントロールに成功する", reward:200 },
-      { id:"t23", category:"情緒・マインド", name:"サッカー・HC・バスケノート", desc:"練習回数分をその日に記録", reward:150 },
+      { id:"t20", category:"情緒・マインド", kind:"check",
+        name:"感謝ノート",      desc:"その日『ありがとう』を3つ書く", reward:100 },
+      { id:"t21", category:"情緒・マインド", kind:"check",
+        name:"自己肯定ワーク",  desc:"今日できた良いことを3つ書く", reward:100 },
+      { id:"t22", category:"情緒・マインド", kind:"check",
+        name:"怒らないデー",    desc:"1日感情コントロールに成功する", reward:200 },
+      { id:"t23", category:"情緒・マインド", kind:"check",
+        name:"サッカー・HC・バスケノート", desc:"練習回数分をその日に記録", reward:50 },
+
       // 経営・数字
-      { id:"t24", category:"経営・数字", name:"支出記録",             desc:"その週のお小遣いの使い道を記録", reward:100 },
-      { id:"t25", category:"経営・数字", name:"価格比較",             desc:"同じ商品を3店舗で比較してまとめる", reward:200 },
-      { id:"t26", category:"経営・数字", name:"小さなビジネス案",     desc:"商品／サービス案を1つ考えて提出", reward:300 }
+      { id:"t24", category:"経営・数字", kind:"check",
+        name:"支出記録",             desc:"その週のお小遣いの使い道を記録", reward:100 },
+      { id:"t25", category:"経営・数字", kind:"check",
+        name:"価格比較",             desc:"同じ商品を3店舗で比較してまとめる", reward:200 },
+      { id:"t26", category:"経営・数字", kind:"check",
+        name:"小さなビジネス案",     desc:"商品／サービス案を1つ考えて提出", reward:300 }
     ];
 
-    // ===== ユーティリティ =====
     function loadData(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -335,7 +380,7 @@
       const [y,m,d] = str.split("-").map(Number);
       return new Date(y,m-1,d);
     }
-    // 月曜始まりの週の「その週の月曜日」を返す
+    // 月曜始まりの週の「その週の月曜日」
     function mondayStart(date){
       const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const day = d.getDay(); // 0:日〜6:土
@@ -355,12 +400,10 @@
       const m = ("0"+(date.getMonth()+1)).slice(-2);
       return `${y}-${m}`;
     }
-
     function yen(num){
       return "¥"+(num||0).toLocaleString();
     }
 
-    // ===== DOM取得 =====
     const childSelect = document.getElementById("childSelect");
     const todayLabel = document.getElementById("todayLabel");
     const todayTotalEl = document.getElementById("todayTotal");
@@ -376,7 +419,7 @@
     const todayStr = formatDate(today);
     todayLabel.textContent = todayStr;
 
-    // ===== タブ切り替え =====
+    // タブ切り替え
     const tabButtons = document.querySelectorAll(".tab-btn");
     const tabContents = {
       main: document.getElementById("tab-main"),
@@ -396,8 +439,8 @@
       });
     });
 
-    // ===== タスク一覧描画 =====
-    const checkboxMap = {}; // { taskId: checkboxElement }
+    // 入力部品のマップ
+    const inputMap = {}; // taskId -> { kind, el }
 
     function renderTasks(){
       taskTableBody.innerHTML = "";
@@ -421,64 +464,86 @@
 
         const tdReward = document.createElement("td");
         tdReward.className = "reward";
-        tdReward.textContent = yen(task.reward);
+        if(task.kind === "counter"){
+          tdReward.textContent = `${yen(task.reward)} × 回数`;
+        }else{
+          tdReward.textContent = yen(task.reward);
+        }
 
-        const tdCheck = document.createElement("td");
-        tdCheck.className = "check";
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.dataset.taskId = task.id;
-        tdCheck.appendChild(cb);
+        const tdCtrl = document.createElement("td");
+        tdCtrl.className = "control";
+
+        if(task.kind === "check"){
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.taskId = task.id;
+          tdCtrl.appendChild(cb);
+          inputMap[task.id] = { kind:"check", el:cb };
+          cb.addEventListener("change", handleInputChange);
+        }else{
+          const wrap = document.createElement("div");
+          wrap.className = "counter-wrap";
+
+          const minusBtn = document.createElement("button");
+          minusBtn.type = "button";
+          minusBtn.textContent = "−";
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "0";
+          input.step = "1";
+          input.value = "0";
+          input.dataset.taskId = task.id;
+
+          const plusBtn = document.createElement("button");
+          plusBtn.type = "button";
+          plusBtn.textContent = "+";
+
+          wrap.appendChild(minusBtn);
+          wrap.appendChild(input);
+          wrap.appendChild(plusBtn);
+          tdCtrl.appendChild(wrap);
+
+          inputMap[task.id] = { kind:"counter", el:input };
+
+          input.addEventListener("change", handleInputChange);
+          plusBtn.addEventListener("click", ()=>{
+            let v = parseInt(input.value,10);
+            if(isNaN(v)) v = 0;
+            input.value = String(v+1);
+            handleInputChange();
+          });
+          minusBtn.addEventListener("click", ()=>{
+            let v = parseInt(input.value,10);
+            if(isNaN(v)) v = 0;
+            input.value = String(Math.max(0, v-1));
+            handleInputChange();
+          });
+        }
 
         tr.appendChild(tdCat);
         tr.appendChild(tdName);
         tr.appendChild(tdReward);
-        tr.appendChild(tdCheck);
+        tr.appendChild(tdCtrl);
 
         taskTableBody.appendChild(tr);
-        checkboxMap[task.id] = cb;
       });
     }
     renderTasks();
 
-    // ===== データ → チェック反映 =====
-    function updateCheckboxesFromData(){
-      const data = loadData();
-      const child = childSelect.value;
-      const childDays = (data.days && data.days[child]) || {};
-      const dayData = childDays[todayStr] || {};
-      tasks.forEach(task=>{
-        const cb = checkboxMap[task.id];
-        cb.checked = !!dayData[task.id];
-      });
-      updateTotals();
-    }
-
-    // ===== チェック変更時 =====
-    function handleCheckboxChange(){
-      const data = loadData();
-      const child = childSelect.value;
-      if(!data.days[child]) data.days[child] = {};
-      if(!data.days[child][todayStr]) data.days[child][todayStr] = {};
-      const dayData = data.days[child][todayStr];
-
-      tasks.forEach(task=>{
-        const cb = checkboxMap[task.id];
-        dayData[task.id] = !!cb.checked;
-      });
-
-      saveData(data);
-      updateTotals();
-    }
-
-    // ===== 合計の更新（日・週・月） =====
     function calcDayTotalFor(child, dateStr){
       const data = loadData();
       const childDays = (data.days && data.days[child]) || {};
       const dayData = childDays[dateStr] || {};
       let total = 0;
       tasks.forEach(task=>{
-        if(dayData[task.id]) total += task.reward;
+        const v = dayData[task.id];
+        if(task.kind === "counter"){
+          const n = typeof v === "number" ? v : 0;
+          if(n>0) total += task.reward * n;
+        }else{
+          if(v) total += task.reward;
+        }
       });
       return total;
     }
@@ -488,11 +553,9 @@
       const child = childSelect.value;
       const childDays = (data.days && data.days[child]) || {};
 
-      // 今日
       const todayTotal = calcDayTotalFor(child, todayStr);
       todayTotalEl.textContent = yen(todayTotal);
 
-      // 今週（月曜始まり）
       let weekTotal = 0;
       Object.keys(childDays).forEach(dateStr=>{
         const d = parseDate(dateStr);
@@ -502,7 +565,6 @@
       });
       weekTotalEl.textContent = yen(weekTotal);
 
-      // 今月（1日〜月末）
       let monthTotal = 0;
       const thisMonthKey = monthKey(today);
       Object.keys(childDays).forEach(dateStr=>{
@@ -514,7 +576,50 @@
       monthTotalEl.textContent = yen(monthTotal);
     }
 
-    // ===== 月別履歴の描画 =====
+    function updateInputsFromData(){
+      const data = loadData();
+      const child = childSelect.value;
+      const childDays = (data.days && data.days[child]) || {};
+      const dayData = childDays[todayStr] || {};
+
+      tasks.forEach(task=>{
+        const entry = inputMap[task.id];
+        if(!entry) return;
+        const v = dayData[task.id];
+        if(entry.kind === "check"){
+          entry.el.checked = !!v;
+        }else{
+          const n = (typeof v === "number" && v>0) ? v : 0;
+          entry.el.value = String(n);
+        }
+      });
+
+      updateTotals();
+    }
+
+    function handleInputChange(){
+      const data = loadData();
+      const child = childSelect.value;
+      if(!data.days[child]) data.days[child] = {};
+      if(!data.days[child][todayStr]) data.days[child][todayStr] = {};
+      const dayData = data.days[child][todayStr];
+
+      tasks.forEach(task=>{
+        const entry = inputMap[task.id];
+        if(!entry) return;
+        if(entry.kind === "check"){
+          dayData[task.id] = !!entry.el.checked;
+        }else{
+          let v = parseInt(entry.el.value,10);
+          if(isNaN(v) || v<0) v = 0;
+          dayData[task.id] = v;
+        }
+      });
+
+      saveData(data);
+      updateTotals();
+    }
+
     function renderMonthHistory(){
       const data = loadData();
       const days = data.days || {};
@@ -531,12 +636,12 @@
         });
       });
 
-      const monthKeys = Object.keys(monthMap).sort().reverse(); // 新しい順
+      const monthKeys = Object.keys(monthMap).sort().reverse();
       monthHistoryEl.innerHTML = "";
       if(monthKeys.length === 0){
         const p = document.createElement("div");
         p.className = "empty-text";
-        p.textContent = "まだ記録がありません。タスクをチェックすると自動で記録されます。";
+        p.textContent = "まだ記録がありません。タスクを記録すると自動で集計されます。";
         monthHistoryEl.appendChild(p);
         return;
       }
@@ -569,7 +674,6 @@
       });
     }
 
-    // ===== 週別履歴の描画 =====
     function renderWeekHistory(){
       const data = loadData();
       const days = data.days || {};
@@ -580,7 +684,7 @@
         Object.keys(childDays).forEach(dateStr=>{
           const d = parseDate(dateStr);
           const mon = mondayStart(d);
-          const wKey = formatDate(mon); // 週の月曜日をキーに
+          const wKey = formatDate(mon);
           if(!weekMap[wKey]) weekMap[wKey] = {};
           if(!weekMap[wKey][child]) weekMap[wKey][child] = 0;
           weekMap[wKey][child] += calcDayTotalFor(child, dateStr);
@@ -592,7 +696,7 @@
       if(weekKeys.length === 0){
         const p = document.createElement("div");
         p.className = "empty-text";
-        p.textContent = "まだ週別の記録がありません。タスクをチェックすると自動で記録されます。";
+        p.textContent = "まだ週別の記録がありません。タスクを記録すると自動で集計されます。";
         weekHistoryEl.appendChild(p);
         return;
       }
@@ -626,17 +730,8 @@
       });
     }
 
-    // ===== ボタン操作 =====
-    // 各チェックボックスにイベント付与
-    tasks.forEach(task=>{
-      const cb = checkboxMap[task.id];
-      if(cb){
-        cb.addEventListener("change", handleCheckboxChange);
-      }
-    });
-
     childSelect.addEventListener("change", ()=>{
-      updateCheckboxesFromData();
+      updateInputsFromData();
     });
 
     resetTodayBtn.addEventListener("click", ()=>{
@@ -645,7 +740,7 @@
       if(!data.days[child]) data.days[child] = {};
       data.days[child][todayStr] = {};
       saveData(data);
-      updateCheckboxesFromData();
+      updateInputsFromData();
     });
 
     resetChildAllBtn.addEventListener("click", ()=>{
@@ -656,11 +751,11 @@
         delete data.days[child];
         saveData(data);
       }
-      updateCheckboxesFromData();
+      updateInputsFromData();
     });
 
-    // ===== 初期表示 =====
-    updateCheckboxesFromData();
+    // 初期表示
+    updateInputsFromData();
   </script>
 </body>
 </html>
