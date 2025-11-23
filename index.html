@@ -625,6 +625,35 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
 renderTasks();
 updateSummary();
 renderWeekDetail();
+function resetToday(){
+  const child=document.getElementById("childSelect").value;
+  const data=loadData();
+  const today=getTodayKey();
+
+  if(data[child] && data[child][today]){
+    delete data[child][today];
+    saveData(data);
+  }
+  updateSummary();
+  renderWeekDetail();
+  alert("今日の記録をリセットしました");
+}
+function resetChildAll(){
+  const child=document.getElementById("childSelect").value;
+  const data=loadData();
+
+  if(data[child]){
+    delete data[child];
+    saveData(data);
+  }
+  updateSummary();
+  renderWeekDetail();
+  alert("この子の全データを削除しました");
+}
+document.getElementById("resetTodayBtn").onclick = resetToday;
+document.getElementById("resetChildAllBtn").onclick = resetChildAll;
+
+
 </script>
 </body>
 </html>
