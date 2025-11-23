@@ -379,20 +379,25 @@ function saveData(data){
 }
 
 // =============================
-// 日・週・月
+// 日付関係
 // =============================
 function getTodayKey(){
   const d=new Date();
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
-function getWeekKey(){
-  const d=new Date();
-  const w=Math.ceil(d.getDate()/7);
-  return `${d.getFullYear()}-${d.getMonth()+1}-week${w}`;
-}
 function getMonthKey(){
   const d=new Date();
   return `${d.getFullYear()}-${d.getMonth()+1}`;
+}
+
+// 週キーは “日付から週番号を計算” に変更（安定）
+function getWeekNumber(date){
+  const firstDay=new Date(date.getFullYear(), date.getMonth(), 1);
+  return Math.ceil((date.getDate() + firstDay.getDay()) / 7);
+}
+function getCurrentWeekKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${d.getMonth()+1}-W${getWeekNumber(d)}`;
 }
 
 // =============================
@@ -402,10 +407,9 @@ function renderTasks(){
   const body=document.getElementById("taskTableBody");
   body.innerHTML="";
 
-  TASKS.forEach((task,i)=>{
+  TASKS.forEach(task=>{
     const tr=document.createElement("tr");
 
-    // タスク名
     const nameTd=document.createElement("td");
     nameTd.innerHTML=`
       <div class="task-name">${task.name}</div>
@@ -413,32 +417,29 @@ function renderTasks(){
     `;
     tr.appendChild(nameTd);
 
-    // 報酬
     const rewardTd=document.createElement("td");
     rewardTd.className="reward";
     rewardTd.textContent=`¥${task.reward}`;
     tr.appendChild(rewardTd);
 
-    // 入力欄
     const controlTd=document.createElement("td");
     controlTd.className="control";
 
-    // ========== チェック式 ==========
+    // チェック式
     if(task.type==="check"){
       const btn=document.createElement("button");
       btn.className="check-btn";
       btn.textContent="✔";
 
-      // 色つきのON/OFF
       btn.onclick=()=>{
         btn.classList.toggle("active");
-        addRecord(task, btn.classList.contains("active")?1:-1 );
+        addRecord(task, btn.classList.contains("active")?1:-1);
       };
 
       controlTd.appendChild(btn);
     }
 
-    // ========== 回数式 ==========
+    // 回数式
     if(task.type==="count"){
       const wrap=document.createElement("div");
       wrap.className="counter-wrap";
@@ -451,27 +452,26 @@ function renderTasks(){
       plus.className="counter-btn";
       plus.textContent="+";
 
-      const countSpan=document.createElement("div");
-      countSpan.className="counter-count";
-      countSpan.textContent="0";
+      const count=document.createElement("div");
+      count.className="counter-count";
+      count.textContent="0";
 
       minus.onclick=()=>{
-        const v=parseInt(countSpan.textContent);
+        const v=Number(count.textContent);
         if(v>0){
-          countSpan.textContent=v-1;
+          count.textContent=v-1;
           addRecord(task,-1);
         }
       };
       plus.onclick=()=>{
-        const v=parseInt(countSpan.textContent);
-        countSpan.textContent=v+1;
+        const v=Number(count.textContent);
+        count.textContent=v+1;
         addRecord(task,1);
       };
 
       wrap.appendChild(minus);
-      wrap.appendChild(countSpan);
+      wrap.appendChild(count);
       wrap.appendChild(plus);
-
       controlTd.appendChild(wrap);
     }
 
@@ -481,7 +481,7 @@ function renderTasks(){
 }
 
 // =============================
-// 記録追加
+// 記録追加（name + reward 保存）
 // =============================
 function addRecord(task,count){
   const child=document.getElementById("childSelect").value;
@@ -505,90 +505,104 @@ function addRecord(task,count){
 }
 
 // =============================
-// サマリー更新
+// 合計表示（★ NaNバグ完全修正）
 // =============================
 function updateSummary(){
   const child=document.getElementById("childSelect").value;
   const data=loadData();
-
   const todayKey=getTodayKey();
   const monthKey=getMonthKey();
-  const weekKey=getWeekKey().split("week")[1];
+  const weekKey=getCurrentWeekKey();
 
-  let todayTotal=0,weekTotal=0,monthTotal=0;
+  let todayTotal=0, weekTotal=0, monthTotal=0;
 
   if(data[child]){
-    Object.keys(data[child]).forEach(k=>{
-      const arr=data[child][k];
-      const sum=arr.reduce((a,b)=>a+b.reward,0);
+    Object.keys(data[child]).forEach(dateKey=>{
+      const records=data[child][dateKey];
 
-      if(k===todayKey) todayTotal+=sum;
-      if(k.startsWith(monthKey)) monthTotal+=sum;
-      if(k.includes(`week${weekKey}`)) weekTotal+=sum;
+      const daySum=records.reduce((sum,r)=>sum + Number(r.reward), 0);
+
+      // 今日
+      if(dateKey===todayKey) todayTotal += daySum;
+
+      // 月の合計
+      if(dateKey.startsWith(monthKey)) monthTotal += daySum;
+
+      // 週の合計
+      if(getWeekKeyFromDate(dateKey) === weekKey){
+        weekTotal += daySum;
+      }
     });
   }
 
   document.getElementById("todayLabel").textContent=todayKey;
   document.getElementById("todayTotal").textContent=`¥${todayTotal}`;
-  document.getElementById("weekTotal").textContent=`¥${weekTotal}`;
   document.getElementById("monthTotal").textContent=`¥${monthTotal}`;
+  document.getElementById("weekTotal").textContent=`¥${weekTotal}`;
   document.getElementById("weekTotalDisplay").textContent=`¥${weekTotal}`;
 }
 
+// 日付文字列から週キーを作る関数
+function getWeekKeyFromDate(dateStr){
+  const [y,m,d]=dateStr.split("-").map(Number);
+  const dt=new Date(y,m-1,d);
+  return `${y}-${m}-W${getWeekNumber(dt)}`;
+}
+
 // =============================
-// 週の詳細を描画
+// 週の詳細表示（①日ごと）
 // =============================
 function renderWeekDetail(){
   const child=document.getElementById("childSelect").value;
   const data=loadData();
-  const weekKey=getWeekKey().split("week")[1];
-  const list=document.getElementById("weekDetailList");
+  const weekKey=getCurrentWeekKey();
+  const container=document.getElementById("weekDetailList");
 
-  list.innerHTML="";
+  container.innerHTML="";
 
   if(!data[child]){
-    list.innerHTML="<div class='empty-text'>記録なし</div>";
+    container.innerHTML="<div class='empty-text'>記録なし</div>";
     return;
   }
 
-  // 週データ抽出
   const weekData={};
+
+  // 週のデータ抽出
   Object.keys(data[child]).forEach(dateKey=>{
-    if(dateKey.includes(`week${weekKey}`)){
+    if(getWeekKeyFromDate(dateKey)===weekKey){
       weekData[dateKey]=data[child][dateKey];
     }
   });
 
   if(Object.keys(weekData).length===0){
-    list.innerHTML="<div class='empty-text'>今週の記録はありません</div>";
+    container.innerHTML="<div class='empty-text'>今週の記録はありません</div>";
     return;
   }
 
-  // 日付順に並べる
-  const sortedDates=Object.keys(weekData).sort((a,b)=>new Date(b)-new Date(a));
+  // 日付ソート（新しい順）
+  const dates=Object.keys(weekData).sort((a,b)=>new Date(b)-new Date(a));
 
-  sortedDates.forEach(date=>{
-    const dateDiv=document.createElement("div");
-    dateDiv.className="week-date-title";
-    dateDiv.textContent=date;
+  dates.forEach(date=>{
+    const title=document.createElement("div");
+    title.className="week-date-title";
+    title.textContent=date;
 
-    const taskContainer=document.createElement("div");
-    taskContainer.style.display="none";
+    const detail=document.createElement("div");
+    detail.style.display="none";
 
-    weekData[date].forEach(entry=>{
+    weekData[date].forEach(r=>{
       const line=document.createElement("div");
       line.className="week-task-line";
-      line.textContent=`・${entry.name}　¥${entry.reward}`;
-      taskContainer.appendChild(line);
+      line.textContent=`・${r.name}　¥${r.reward}`;
+      detail.appendChild(line);
     });
 
-    // 折りたたみ
-    dateDiv.onclick=()=>{
-      taskContainer.style.display = taskContainer.style.display==="none"?"block":"none";
+    title.onclick=()=>{
+      detail.style.display = detail.style.display==="none" ? "block" : "none";
     };
 
-    list.appendChild(dateDiv);
-    list.appendChild(taskContainer);
+    container.appendChild(title);
+    container.appendChild(detail);
   });
 }
 
@@ -612,6 +626,5 @@ renderTasks();
 updateSummary();
 renderWeekDetail();
 </script>
-
 </body>
 </html>
