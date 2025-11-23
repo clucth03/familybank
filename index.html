@@ -209,11 +209,28 @@ td.control{
   color:var(--muted);
   margin-top:8px;
 }
+
+/* weekly detail */
+.week-date-title{
+  font-size:18px;
+  font-weight:700;
+  padding:10px;
+  background:#f3f4f6;
+  border-radius:10px;
+  margin-top:12px;
+  cursor:pointer;
+}
+.week-task-line{
+  padding:6px 10px;
+  font-size:16px;
+  border-bottom:1px solid #eee;
+}
 </style>
 </head>
 
 <body>
 
+<!-- タブメニュー -->
 <div class="card">
   <div class="tabs">
     <button class="tab-btn active" data-tab="main">今日のタスク</button>
@@ -222,8 +239,8 @@ td.control{
   </div>
 </div>
 
+<!-- 今日タブ -->
 <div id="tab-main" class="tab-content active">
-
   <div class="card sticky-summary">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div>
@@ -253,7 +270,7 @@ td.control{
       <button id="resetChildAllBtn">この子の全データを消去</button>
     </div>
   </div>
-
+    <!-- タスク一覧（今日タブ） -->
   <div class="card">
     <h2>タスク一覧</h2>
     <table>
@@ -267,6 +284,34 @@ td.control{
       <tbody id="taskTableBody"></tbody>
     </table>
   </div>
+</div> <!-- /tab-main -->
+
+
+<!-- 月タブ -->
+<div id="tab-month" class="tab-content">
+  <div class="card">
+    <h2>月のきろく</h2>
+    <div id="monthHistoryList">読み込み中…</div>
+  </div>
+</div>
+
+
+<!-- 週タブ -->
+<div id="tab-week" class="tab-content">
+  <div class="card">
+    <h2>今週の合計</h2>
+    <div id="weekTotalDisplay">¥0</div>
+  </div>
+
+  <!-- ▼▼▼ 週の詳細表示 ▼▼▼ -->
+  <div class="card" id="weekDetailCard">
+    <h2>週の記録（詳細）</h2>
+    <div id="weekDetailList">
+      読み込み中…
+    </div>
+  </div>
+  <!-- ▲▲▲ 週の詳細表示ここまで ▲▲▲ -->
+
 </div>
 <script>
 // =============================
@@ -286,14 +331,7 @@ const TASKS = [
     desc:"調べた内容をまとめる" },
   { name:"学習発表", reward:300, type:"check",
     desc:"なんでも良いので調べて家族の前で発表する" },
-{ 
-  name:"勉強を教えてあげる・宿題チェック（週）", 
-  reward:300, 
-  type:"check",
-  desc:"家族の勉強サポートや宿題チェックを行った週に記録"
-},
 
-  
   // ------- 生活・家事 -------
   { name:"お風呂掃除（回数式）", reward:50, type:"count",
     desc:"自分の担当範囲を全部掃除する" },
@@ -315,6 +353,8 @@ const TASKS = [
   { name:"新しいタスク案（2案で1000円・1案で500円）", reward:1000, type:"check" },
   { name:"公共マナー実践", reward:150, type:"check" },
   { name:"困っている人の手助け", reward:150, type:"check" },
+  { name:"勉強を教えてあげる・宿題チェック（週）", reward:300, type:"check",
+    desc:"家族の勉強サポート／宿題チェックをした週に記録" },
 
   // ------- 情緒・マインド -------
   { name:"感謝ノート（毎日）", reward:100, type:"check",
@@ -453,7 +493,7 @@ function addRecord(task,count){
 
   if(count>0){
     for(let i=0;i<count;i++){
-      data[child][today].push(task.reward);
+      data[child][today].push({name:task.name, reward:task.reward});
     }
   }else{
     data[child][today].pop();
@@ -461,6 +501,7 @@ function addRecord(task,count){
 
   saveData(data);
   updateSummary();
+  renderWeekDetail();
 }
 
 // =============================
@@ -479,7 +520,7 @@ function updateSummary(){
   if(data[child]){
     Object.keys(data[child]).forEach(k=>{
       const arr=data[child][k];
-      const sum=arr.reduce((a,b)=>a+b,0);
+      const sum=arr.reduce((a,b)=>a+b.reward,0);
 
       if(k===todayKey) todayTotal+=sum;
       if(k.startsWith(monthKey)) monthTotal+=sum;
@@ -491,26 +532,65 @@ function updateSummary(){
   document.getElementById("todayTotal").textContent=`¥${todayTotal}`;
   document.getElementById("weekTotal").textContent=`¥${weekTotal}`;
   document.getElementById("monthTotal").textContent=`¥${monthTotal}`;
+  document.getElementById("weekTotalDisplay").textContent=`¥${weekTotal}`;
 }
 
 // =============================
-// リセット
+// 週の詳細を描画
 // =============================
-document.getElementById("resetTodayBtn").onclick=()=>{
+function renderWeekDetail(){
   const child=document.getElementById("childSelect").value;
   const data=loadData();
-  data[child][getTodayKey()]=[];
-  saveData(data);
-  updateSummary();
-};
+  const weekKey=getWeekKey().split("week")[1];
+  const list=document.getElementById("weekDetailList");
 
-document.getElementById("resetChildAllBtn").onclick=()=>{
-  const child=document.getElementById("childSelect").value;
-  const data=loadData();
-  data[child]={};
-  saveData(data);
-  updateSummary();
-};
+  list.innerHTML="";
+
+  if(!data[child]){
+    list.innerHTML="<div class='empty-text'>記録なし</div>";
+    return;
+  }
+
+  // 週データ抽出
+  const weekData={};
+  Object.keys(data[child]).forEach(dateKey=>{
+    if(dateKey.includes(`week${weekKey}`)){
+      weekData[dateKey]=data[child][dateKey];
+    }
+  });
+
+  if(Object.keys(weekData).length===0){
+    list.innerHTML="<div class='empty-text'>今週の記録はありません</div>";
+    return;
+  }
+
+  // 日付順に並べる
+  const sortedDates=Object.keys(weekData).sort((a,b)=>new Date(b)-new Date(a));
+
+  sortedDates.forEach(date=>{
+    const dateDiv=document.createElement("div");
+    dateDiv.className="week-date-title";
+    dateDiv.textContent=date;
+
+    const taskContainer=document.createElement("div");
+    taskContainer.style.display="none";
+
+    weekData[date].forEach(entry=>{
+      const line=document.createElement("div");
+      line.className="week-task-line";
+      line.textContent=`・${entry.name}　¥${entry.reward}`;
+      taskContainer.appendChild(line);
+    });
+
+    // 折りたたみ
+    dateDiv.onclick=()=>{
+      taskContainer.style.display = taskContainer.style.display==="none"?"block":"none";
+    };
+
+    list.appendChild(dateDiv);
+    list.appendChild(taskContainer);
+  });
+}
 
 // =============================
 // タブ切り替え
@@ -522,12 +602,16 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
 
     btn.classList.add("active");
     document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+
+    if(btn.dataset.tab==="week") renderWeekDetail();
   };
 });
 
 // 初期表示
 renderTasks();
 updateSummary();
+renderWeekDetail();
 </script>
+
 </body>
 </html>
